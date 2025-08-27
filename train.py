@@ -1,4 +1,5 @@
 import argparse
+import threading
 import time
 
 import torch
@@ -8,6 +9,7 @@ from tqdm import tqdm
 
 from dataset import SuperconductingChipDataset
 from model import ChipPerformanceNet
+from speech import LANGUAGES, speak_message
 
 
 def get_device() -> torch.device:
@@ -18,7 +20,7 @@ def get_device() -> torch.device:
     return torch.device("cpu")
 
 
-def train(args):
+def train(args, selected_lang):
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
@@ -75,6 +77,8 @@ def train(args):
         epoch_times.append(epoch_time)
         remaining = (args.epochs - epoch - 1) * (sum(epoch_times) / len(epoch_times))
         print(f"Epoch {epoch + 1}: val_loss={val_loss:.4f} ETA:{remaining:.1f}s")
+        if args.speak:
+            speak_message(selected_lang["code"], "epoch", epoch=epoch + 1, total=args.epochs, val_loss=val_loss)
 
         if args.plot:
             ax.clear()
@@ -98,6 +102,7 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--ui", action="store_true", help="Use file dialog to select CSV if not provided")
     parser.add_argument("--plot", action="store_true", help="Show real-time training plot")
+    parser.add_argument("--speak", action="store_true", help="Enable voice notifications with language buttons")
     args = parser.parse_args()
 
     if args.ui or not args.csv:
@@ -114,7 +119,18 @@ def main():
     if not args.csv:
         parser.error("CSV file must be provided")
 
-    train(args)
+    selected_lang = {"code": "en"}
+    if args.speak:
+        try:
+            import tkinter as tk
+            root = tk.Tk()
+            root.title("Select language")
+            for code, data in LANGUAGES.items():
+                tk.Button(root, text=data["name"], command=lambda c=code: selected_lang.__setitem__("code", c)).pack(side=tk.LEFT)
+            threading.Thread(target=root.mainloop, daemon=True).start()
+        except Exception as exc:
+            print(f"Language selector failed: {exc}")
+    train(args, selected_lang)
 
 
 if __name__ == "__main__":

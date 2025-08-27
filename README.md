@@ -1,15 +1,24 @@
 # Quantum-Chip
 
-This repository provides a minimal PyTorch pipeline for estimating the performance of superconducting quantum chips using paired TEM and AFM images.
+This repository offers a minimal PyTorch pipeline for estimating the performance of superconducting quantum chips from paired TEM and AFM images.
 
-## Dataset format
+## Contents
 
-Create a CSV file where each row describes a chip with the following columns:
+1. [Dataset](#dataset)
+2. [Training](#training)
+3. [Interactive options](#interactive-options)
+4. [Speech notifications](#speech-notifications)
+
+## Dataset
+
+Create a CSV file where each row describes a chip:
 
 ```
 tem_path,afm_path,performance
 /path/to/chip1_tem.png,/path/to/chip1_afm.png,0.85
 ```
+
+Each image pair is loaded, resized to 224×224, stacked as a two-channel tensor and mapped to the numeric performance value.
 
 ## Training
 
@@ -17,9 +26,30 @@ tem_path,afm_path,performance
 python train.py --csv path/to/data.csv --epochs 20 --output model.pt
 ```
 
-The script reads the CSV, stacks each chip's TEM and AFM images as a two-channel tensor, and trains a modified ResNet-18 to predict the measured performance value.
+The script reads the CSV, trains a modified ResNet‑18 and saves weights to `model.pt`.
 
 ### Interactive options
 
-- `--ui` opens a file dialog to choose the CSV instead of specifying `--csv` on the command line.
-- `--plot` displays a live plot of training and validation loss. Progress bars with remaining time are always shown in the console.
+- `--ui` opens a file dialog to choose the CSV.
+- `--plot` shows a live plot of training/validation loss and progress bars with ETA.
+
+## Speech notifications
+
+Add spoken feedback with language buttons:
+
+```
+python train.py --csv path/to/data.csv --speak
+```
+
+Click the desired button in the pop-up window to switch among:
+
+| Code | Language |
+|------|----------|
+| zh   | 中文 |
+| en   | English |
+| de   | Deutsch |
+| fr   | Français |
+| es   | Español |
+| el   | Ελληνικά |
+
+Every epoch completion is announced in the selected language (requires `pyttsx3`).
